@@ -1,0 +1,21 @@
+services:
+  printer-bot:
+    build: .
+    image: zeevb053/printing-bot:1.0
+    network_mode: "host"  # needed for printing
+    restart: always
+    environment:
+      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+      - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    volumes:
+      - ./service_account.json:/app/service_account.json
+      - ./downloads:/app/downloads
+      - /etc/cups:/etc/cups
+      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+    command: >
+      python printer_bot.py
+      --token 'your token'
+      --base 'your base'
+      --table 'your table'
+      --printer 'your printer name'
+      --interval 5
