@@ -14,6 +14,7 @@ import subprocess
 import logging
 
 from pyairtable import Table
+from pyairtable import Api
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
@@ -21,10 +22,10 @@ from googleapiclient.http import MediaIoBaseDownload
 # import ssl
 # context = ssl._create_unverified_context()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
-)
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s [%(levelname)s] %(message)s"
+# )
 logger = logging.getLogger(__name__)
 
 def get_folder_id_from_url(url):
@@ -86,6 +87,7 @@ def process_records(table, drive_service, printer):
                         logger.info("Marked as printed.\n")
                     else:
                         logger.error(f"Failed to print {f}.")
+                        exit (1)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -97,7 +99,9 @@ def main():
     parser.add_argument('--creds', default='service_account.json')
     args = parser.parse_args()
 
-    table = Table(args.token, args.base, args.table)
+    # table = Table(args.token, args.base, args.table)
+    api = Api(args.token)
+    table = api.table(args.base, args.table)    
     creds = service_account.Credentials.from_service_account_file(
         args.creds, scopes=["https://www.googleapis.com/auth/drive.readonly"]
     )
@@ -121,4 +125,29 @@ def main():
         time.sleep(sleep_time)
 
 if __name__ == "__main__":
+    # Ensure logs directory exists
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+    # Set up logging to file and console
+    log_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    file_handler = logging.FileHandler("logs/printer_bot.log", encoding="utf-8")
+    file_handler.setFormatter(log_formatter)
+    file_handler.setLevel(logging.INFO)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    console_handler.setLevel(logging.INFO)
+
+    #logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    logger.handlers = []  # Clear existing handlers
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    
+    logger.info(" ")
+    logger.info("------------------------------------------------------")
+    logger.info(f"Starting printer bot at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("------------------------------------------------------")
+
     main()
